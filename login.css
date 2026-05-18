@@ -1,0 +1,253 @@
+/* LOGIN.CSS — Hotel Management System */
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #0b0f14;
+  --surface:  #131820;
+  --border:   #1e2530;
+  --gold:     #c9a84c;
+  --gold-dim: #8a6c28;
+  --text:     #e8e0d0;
+  --muted:    #6b7280;
+  --danger:   #e05252;
+  --radius:   12px;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ── */
+.left {
+  flex: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 60px;
+  background:
+    linear-gradient(160deg, rgba(11,15,20,0.0) 30%, rgba(11,15,20,0.85) 100%),
+    url('https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=900&q=80') center/cover no-repeat;
+}
+
+.left-badge {
+  position: absolute;
+  top: 48px;
+  left: 60px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.left-badge .icon {
+  width: 42px; height: 42px;
+  border: 1.5px solid var(--gold);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+
+.left-badge .icon svg { width: 22px; fill: var(--gold); }
+
+.left-badge span {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  letter-spacing: 0.04em;
+  color: var(--text);
+}
+
+.left-copy h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2rem, 4vw, 3.2rem);
+  line-height: 1.15;
+  margin-bottom: 16px;
+  color: #fff;
+}
+
+.left-copy p {
+  font-size: 15px;
+  color: rgba(232,224,208,0.65);
+  max-width: 360px;
+  line-height: 1.7;
+}
+
+.stat-row {
+  display: flex;
+  gap: 32px;
+  margin-top: 40px;
+}
+
+.stat { display: flex; flex-direction: column; gap: 4px; }
+.stat strong { font-size: 28px; color: var(--gold); font-weight: 600; }
+.stat span   { font-size: 12px; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* ── RIGHT PANEL ── */
+.right {
+  width: 460px;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 64px 52px;
+  position: relative;
+  animation: slideIn .5s ease both;
+}
+
+.right::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold), var(--gold-dim));
+}
+
+/* ── FORM ── */
+.form-header { margin-bottom: 40px; }
+.form-header h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+.form-header p { font-size: 14px; color: var(--muted); }
+
+label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.field { margin-bottom: 24px; position: relative; }
+
+input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  padding: 14px 16px;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(201,168,76,.12);
+}
+
+input.error { border-color: var(--danger); }
+
+/* ── PASSWORD TOGGLE ── */
+.toggle-pw {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color .15s;
+}
+.toggle-pw:hover { color: var(--gold); }
+.toggle-pw svg { width: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+/* ── ERROR MSG ── */
+.error-msg {
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 6px;
+  display: none;
+}
+.error-msg.show { display: block; }
+
+/* ── BUTTON ── */
+.btn-login {
+  width: 100%;
+  padding: 15px;
+  background: var(--gold);
+  color: #0b0f14;
+  border: none;
+  border-radius: var(--radius);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  margin-top: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: background .2s, transform .1s;
+}
+.btn-login:hover  { background: #dbbf6a; }
+.btn-login:active { transform: scale(.98); }
+
+.btn-login .spinner {
+  display: none;
+  width: 18px; height: 18px;
+  border: 2px solid rgba(11,15,20,.3);
+  border-top-color: #0b0f14;
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+}
+.btn-login.loading span   { opacity: 0; }
+.btn-login.loading .spinner { display: block; }
+
+/* ── FOOTER ── */
+.footer-note {
+  margin-top: 36px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.6;
+}
+
+.footer-note code { color: var(--gold); }
+
+/* ── ANIMATIONS ── */
+.shake { animation: shake .35s ease; }
+
+@keyframes spin {
+  to { transform: translate(-50%,-50%) rotate(360deg); }
+}
+
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%     { transform: translateX(-8px); }
+  40%     { transform: translateX(8px); }
+  60%     { transform: translateX(-5px); }
+  80%     { transform: translateX(5px); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 820px) {
+  body { flex-direction: column; }
+  .left { min-height: 260px; padding: 40px 28px; }
+  .left-badge { top: 28px; left: 28px; }
+  .left-copy h1 { font-size: 1.8rem; }
+  .right { width: 100%; padding: 48px 28px; }
+}

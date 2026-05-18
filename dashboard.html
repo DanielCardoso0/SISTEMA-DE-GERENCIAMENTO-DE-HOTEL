@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestão Hoteleira — Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css"/>
+</head>
+<body>
+
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-icon">
+      <svg viewBox="0 0 24 24"><path d="M3 21h18M3 7l9-4 9 4M4 21V7M20 21V7M9 21v-4h6v4"/></svg>
+    </div>
+    <div class="brand-text">
+      <strong>Gestão Hoteleira</strong>
+      <span>Sistema v1.0</span>
+    </div>
+  </div>
+
+  <nav>
+    <div class="nav-section">Principal</div>
+    <a class="active" onclick="showPage('dashboard', this)">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      Dashboard
+    </a>
+
+    <div class="nav-section">Gestão</div>
+    <a onclick="showPage('funcionarios', this)">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Funcionários
+    </a>
+    <a onclick="showPage('presencas', this)">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+      Presenças
+    </a>
+
+    <div class="nav-section">Análise</div>
+    <a onclick="showPage('relatorio', this)">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Relatório
+    </a>
+  </nav>
+
+  <div class="sidebar-user">
+    <div class="avatar">A</div>
+    <div class="user-info">
+      <strong>Administrador</strong>
+      <span>admin</span>
+    </div>
+    <button class="btn-logout" title="Sair" onclick="logout()">
+      <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN-->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div>
+      <h1 id="pageTitle">Dashboard</h1>
+      <div class="breadcrumb" id="pageCrumb">Visão geral do sistema</div>
+    </div>
+    <button class="btn btn-primary" id="topActionBtn" onclick="openModal('add')" style="display:none">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Novo Funcionário
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD  -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card gold">
+          <div class="label">Total Funcionários</div>
+          <div class="value" id="sc-total">0</div>
+          <div class="sub">Cadastrados no sistema</div>
+        </div>
+        <div class="stat-card green">
+          <div class="label">Presentes Hoje</div>
+          <div class="value" id="sc-presentes">0</div>
+          <div class="sub">Registados presentes</div>
+        </div>
+        <div class="stat-card red">
+          <div class="label">Faltosos Hoje</div>
+          <div class="value" id="sc-faltosos">0</div>
+          <div class="sub">Ausências registadas</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="label">Folha Salarial</div>
+          <div class="value" id="sc-salario">0</div>
+          <div class="sub">Total mensal em Kz</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Funcionários Recentes</h2>
+          <button class="btn btn-ghost" onclick="showPage('funcionarios', document.querySelectorAll('nav a')[1])">Ver todos</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Nome</th><th>Cargo</th><th>Turno</th><th>Salário (Kz)</th></tr>
+            </thead>
+            <tbody id="dash-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUNCIONÁRIOS -->
+    <div class="page" id="page-funcionarios">
+      <div class="panel">
+        <div class="panel-head">
+          <h2>Todos os Funcionários</h2>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <div class="search-box">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input type="text" placeholder="Pesquisar…" id="searchInput" oninput="renderTable()"/>
+            </div>
+            <button class="btn btn-primary" onclick="openModal('add')">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Cadastrar
+            </button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>ID</th><th>Nome</th><th>BI</th><th>Cargo</th><th>Turno</th><th>Salário (Kz)</th><th>Telefone</th><th>Acções</th></tr>
+            </thead>
+            <tbody id="func-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!--PRESENÇAS -->
+    <div class="page" id="page-presencas">
+      <div class="panel" style="margin-bottom:24px">
+        <div class="panel-head"><h2>Registar Presença</h2></div>
+        <div style="padding:24px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:160px">
+            <label>ID do Funcionário</label>
+            <input type="number" id="pres-id" placeholder="Ex: 1"/>
+          </div>
+          <div class="form-group" style="flex:1;min-width:160px">
+            <label>Estado</label>
+            <select id="pres-estado">
+              <option value="Presente">Presente</option>
+              <option value="Faltou">Faltou</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="registrarPresenca()" style="height:42px">Registar</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>Histórico de Presenças</h2></div>
+        <div class="presence-grid" id="pres-grid" style="padding:20px"></div>
+      </div>
+    </div>
+
+    <!--RELATÓRIO -->
+    <div class="page" id="page-relatorio">
+      <div class="relatorio-grid" id="rel-grid"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- MODAL — Cadastrar / Editar Funcionário -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOut(event)">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modalTitle">Cadastrar Funcionário</h3>
+      <button class="close-btn" onclick="closeModal()">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-grid">
+
+        <div class="form-group full">
+          <label>Nome Completo</label>
+          <input type="text" id="f-nome" placeholder="Ex: João Silva"/>
+          <span class="field-error" id="e-nome">Campo obrigatório</span>
+        </div>
+
+        <div class="form-group">
+          <label>BI <small style="color:var(--muted)">(9núm + 2let + 3núm)</small></label>
+          <input type="text" id="f-bi" placeholder="Ex: 003456789LA042" maxlength="14"/>
+          <span class="field-error" id="e-bi">BI inválido ou duplicado</span>
+        </div>
+
+        <div class="form-group">
+          <label>Cargo</label>
+          <input type="text" id="f-cargo" placeholder="Ex: Recepcionista"/>
+          <span class="field-error" id="e-cargo">Campo obrigatório</span>
+        </div>
+
+        <div class="form-group">
+          <label>Salário (Kz)</label>
+          <input type="number" id="f-salario" placeholder="Ex: 150000" min="1"/>
+          <span class="field-error" id="e-salario">Salário inválido</span>
+        </div>
+
+        <div class="form-group">
+          <label>Telefone <small style="color:var(--muted)">(9 dígitos, inicia 2 ou 9)</small></label>
+          <input type="text" id="f-telefone" placeholder="Ex: 923456789" maxlength="9"/>
+          <span class="field-error" id="e-telefone">Número inválido ou duplicado</span>
+        </div>
+
+        <div class="form-group">
+          <label>Turno</label>
+          <select id="f-turno">
+            <option value="Manhã">Manhã</option>
+            <option value="Tarde">Tarde</option>
+            <option value="Noite">Noite</option>
+            <option value="Rotativo">Rotativo</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarFuncionario()">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="btnSalvarLabel">Cadastrar</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast">
+  <span class="dot" id="toast-dot"></span>
+  <span id="toast-msg"></span>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>
