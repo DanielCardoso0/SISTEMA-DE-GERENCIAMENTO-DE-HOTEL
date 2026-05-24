@@ -8,7 +8,6 @@
 </head>
 <body>
 
-
 <aside class="sidebar">
   <div class="sidebar-brand">
     <div class="brand-icon">
@@ -56,7 +55,7 @@
   </div>
 </aside>
 
-<!-- MAIN-->
+<!-- MAIN -->
 <div class="main">
 
   <!-- TOPBAR -->
@@ -73,7 +72,7 @@
 
   <div class="content">
 
-    <!-- DASHBOARD  -->
+    <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
       <div class="stats-grid">
         <div class="stat-card gold">
@@ -141,7 +140,7 @@
       </div>
     </div>
 
-    <!--PRESENÇAS -->
+    <!-- PRESENÇAS -->
     <div class="page" id="page-presencas">
       <div class="panel" style="margin-bottom:24px">
         <div class="panel-head"><h2>Registar Presença</h2></div>
@@ -167,8 +166,14 @@
       </div>
     </div>
 
-    <!--RELATÓRIO -->
+    <!-- RELATÓRIO -->
     <div class="page" id="page-relatorio">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+        <button class="btn btn-primary" onclick="exportarPDF()">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Exportar PDF
+        </button>
+      </div>
       <div class="relatorio-grid" id="rel-grid"></div>
     </div>
 

@@ -1,23 +1,69 @@
+// ═══════════════════════════════════════
 //  DASHBOARD.JS — Hotel Management System
-//  Equivalente ao SistemaHotel.java
+//  Ligado à API Spring Boot com JWT
+// ═══════════════════════════════════════
 
+const API = 'http://localhost:8080/api';
 
-
-//  STATE (equivalente aos ArrayLists do Java)
-
-let funcionarios = JSON.parse(localStorage.getItem('hms_func') || '[]');
-let presencas    = JSON.parse(localStorage.getItem('hms_pres') || '[]');
-let contadorId   = parseInt(localStorage.getItem('hms_cid')  || '1');
+let funcionarios = [];
+let presencas    = [];
 let editingId    = null;
 
-// Equivalente a: salvarFuncionarios() — BufferedWriter
-function save() {
-  localStorage.setItem('hms_func', JSON.stringify(funcionarios));
-  localStorage.setItem('hms_pres', JSON.stringify(presencas));
-  localStorage.setItem('hms_cid',  String(contadorId));
+// ══════════════════════════════════
+//  JWT — AUTENTICAÇÃO
+// ══════════════════════════════════
+
+function headers() {
+  const token = sessionStorage.getItem('token');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  };
 }
 
+function verificarAuth() {
+  const token = sessionStorage.getItem('token');
+  if (!token) {
+    window.location.href = 'index.html';
+  }
+}
+
+function handleUnauthorized(res) {
+  if (res.status === 401 || res.status === 403) {
+    sessionStorage.clear();
+    window.location.href = 'index.html';
+    return true;
+  }
+  return false;
+}
+
+// ══════════════════════════════════
+//  CARREGAR DADOS DA API
+// ══════════════════════════════════
+
+async function carregarFuncionarios() {
+  try {
+    const res = await fetch(`${API}/funcionarios`, { headers: headers() });
+    if (handleUnauthorized(res)) return;
+    funcionarios = await res.json();
+  } catch (e) {
+    toast('Erro ao carregar funcionários.', 'danger');
+  }
+}
+
+async function carregarPresencas() {
+  try {
+    const res = await fetch(`${API}/presencas`, { headers: headers() });
+    if (handleUnauthorized(res)) return;
+    presencas = await res.json();
+  } catch (e) {
+    toast('Erro ao carregar presenças.', 'danger');
+  }
+}
+
+// ══════════════════════════════════
 //  NAVEGAÇÃO ENTRE PÁGINAS
+// ══════════════════════════════════
 
 const pageLabels = {
   dashboard:    'Dashboard',
@@ -33,7 +79,7 @@ const pageCrumbs = {
   relatorio:    'Análise de dados'
 };
 
-function showPage(id, link) {
+async function showPage(id, link) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
 
@@ -46,14 +92,15 @@ function showPage(id, link) {
   const btn = document.getElementById('topActionBtn');
   btn.style.display = (id === 'funcionarios') ? '' : 'none';
 
-  if (id === 'dashboard')    renderDash();
-  if (id === 'funcionarios') renderTable();
-  if (id === 'presencas')    renderPresencas();
-  if (id === 'relatorio')    renderRelatorio();
+  if (id === 'dashboard')    { await carregarFuncionarios(); await carregarPresencas(); renderDash(); }
+  if (id === 'funcionarios') { await carregarFuncionarios(); renderTable(); }
+  if (id === 'presencas')    { await carregarFuncionarios(); await carregarPresencas(); renderPresencas(); }
+  if (id === 'relatorio')    { await carregarFuncionarios(); await carregarPresencas(); renderRelatorio(); }
 }
 
-
-//  TOAST (notificações)
+// ══════════════════════════════════
+//  TOAST
+// ══════════════════════════════════
 
 let toastTimer;
 function toast(msg, type = 'success') {
@@ -76,15 +123,15 @@ function toast(msg, type = 'success') {
 // ══════════════════════════════════
 //  MODAL
 // ══════════════════════════════════
+
 function openModal(mode, id = null) {
   editingId = id;
   clearErrors();
 
-  document.getElementById('modalTitle').textContent    = id ? 'Editar Funcionário' : 'Cadastrar Funcionário';
+  document.getElementById('modalTitle').textContent     = id ? 'Editar Funcionário' : 'Cadastrar Funcionário';
   document.getElementById('btnSalvarLabel').textContent = id ? 'Actualizar' : 'Cadastrar';
 
   if (id) {
-    // Preencher com dados do funcionário (edição)
     const f = funcionarios.find(x => x.id === id);
     document.getElementById('f-nome').value     = f.nome;
     document.getElementById('f-bi').value       = f.bi;
@@ -92,9 +139,8 @@ function openModal(mode, id = null) {
     document.getElementById('f-salario').value  = f.salario;
     document.getElementById('f-telefone').value = f.telefone;
     document.getElementById('f-turno').value    = f.turno;
-    document.getElementById('f-bi').disabled    = true; // BI não editável
+    document.getElementById('f-bi').disabled    = true;
   } else {
-    // Limpar campos (novo cadastro)
     ['f-nome','f-bi','f-cargo','f-salario','f-telefone'].forEach(fid => {
       document.getElementById(fid).value = '';
     });
@@ -127,12 +173,11 @@ function showError(field, msg) {
   document.getElementById('f-' + field).classList.add('err');
 }
 
+// ══════════════════════════════════
+//  CRUD — via API REST com JWT
+// ══════════════════════════════════
 
-//  CRUD — equivalente ao SistemaHotel.java
-
-
-// Equivalente a: cadastrarFuncionario() e editarFuncionario()
-function salvarFuncionario() {
+async function salvarFuncionario() {
   clearErrors();
   let ok = true;
 
@@ -143,73 +188,84 @@ function salvarFuncionario() {
   const telefone = document.getElementById('f-telefone').value.trim();
   const turno    = document.getElementById('f-turno').value;
 
-  // Validações (equivalente às do SistemaHotel.java)
-  if (!nome)              { showError('nome', 'Campo obrigatório'); ok = false; }
-  if (!cargo)             { showError('cargo', 'Campo obrigatório'); ok = false; }
+  if (!nome)                    { showError('nome', 'Campo obrigatório'); ok = false; }
+  if (!cargo)                   { showError('cargo', 'Campo obrigatório'); ok = false; }
   if (!salario || salario <= 0) { showError('salario', 'Salário deve ser maior que 0'); ok = false; }
-
-  // Validação de telefone: ^[29][0-9]{8}$
-  if (!/^[29][0-9]{8}$/.test(telefone)) {
-    showError('telefone', 'Número inválido (9 dígitos, inicia com 2 ou 9)');
-    ok = false;
-  }
-
-  if (!editingId) {
-    // Validação de BI: ^[0-9]{9}[A-Z]{2}[0-9]{3}$
-    if (!/^[0-9]{9}[A-Z]{2}[0-9]{3}$/.test(bi)) {
-      showError('bi', 'BI inválido. Ex: 003456789LA042');
-      ok = false;
-    } else if (funcionarios.some(f => f.bi === bi)) {
-      showError('bi', 'BI já cadastrado');
-      ok = false;
-    }
-    if (funcionarios.some(f => f.telefone === telefone)) {
-      showError('telefone', 'Telefone já cadastrado');
-      ok = false;
-    }
-  } else {
-    if (funcionarios.some(f => f.telefone === telefone && f.id !== editingId)) {
-      showError('telefone', 'Telefone já cadastrado');
-      ok = false;
-    }
-  }
+  if (!/^[29][0-9]{8}$/.test(telefone)) { showError('telefone', 'Número inválido (9 dígitos, inicia com 2 ou 9)'); ok = false; }
+  if (!editingId && !/^[0-9]{9}[A-Z]{2}[0-9]{3}$/.test(bi)) { showError('bi', 'BI inválido. Ex: 003456789LA042'); ok = false; }
 
   if (!ok) return;
 
-  if (editingId) {
-    // Editar funcionário existente
-    const idx = funcionarios.findIndex(f => f.id === editingId);
-    funcionarios[idx] = { ...funcionarios[idx], nome, cargo, salario, telefone, turno };
-    toast('Funcionário actualizado com sucesso!');
-  } else {
-    // Novo funcionário
-    funcionarios.push({ id: contadorId, nome, bi, cargo, salario, telefone, turno });
-    toast('Funcionário cadastrado! ID: ' + contadorId);
-    contadorId++;
+  const dados = { nome, bi, cargo, salario, telefone, turno };
+
+  try {
+    let response;
+    if (editingId) {
+      response = await fetch(`${API}/funcionarios/${editingId}`, {
+        method: 'PUT',
+        headers: headers(),
+        body: JSON.stringify(dados)
+      });
+    } else {
+      response = await fetch(`${API}/funcionarios`, {
+        method: 'POST',
+        headers: headers(),
+        body: JSON.stringify(dados)
+      });
+    }
+
+    if (handleUnauthorized(response)) return;
+
+    if (!response.ok) {
+      const erro = await response.text();
+      toast(erro, 'danger');
+      return;
+    }
+
+    toast(editingId ? 'Funcionário actualizado!' : 'Funcionário cadastrado!');
+    closeModal();
+    await carregarFuncionarios();
+    renderTable();
+    renderDash();
+
+  } catch (e) {
+    toast('Erro ao conectar à API.', 'danger');
   }
-
-  save();
-  closeModal();
-  renderTable();
-  renderDash();
 }
 
-// Equivalente a: removerFuncionario()
-function removerFuncionario(id) {
+async function removerFuncionario(id) {
   if (!confirm('Remover este funcionário?')) return;
-  funcionarios = funcionarios.filter(f => f.id !== id);
-  save();
-  renderTable();
-  renderDash();
-  toast('Funcionário removido.', 'danger');
+
+  try {
+    const response = await fetch(`${API}/funcionarios/${id}`, {
+      method: 'DELETE',
+      headers: headers()
+    });
+
+    if (handleUnauthorized(response)) return;
+
+    if (!response.ok) {
+      toast('Erro ao remover funcionário.', 'danger');
+      return;
+    }
+
+    toast('Funcionário removido.', 'danger');
+    await carregarFuncionarios();
+    renderTable();
+    renderDash();
+
+  } catch (e) {
+    toast('Erro ao conectar à API.', 'danger');
+  }
 }
 
-//  RENDER TABLE — listarFuncionarios()
+// ══════════════════════════════════
+//  RENDER TABLE
+// ══════════════════════════════════
 
 function renderTable() {
   const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
 
-  // pesquisarFuncionario() — filtro por nome, cargo ou ID
   const list = funcionarios.filter(f =>
     f.nome.toLowerCase().includes(q) ||
     f.cargo.toLowerCase().includes(q) ||
@@ -252,8 +308,9 @@ function renderTable() {
   `).join('');
 }
 
-
-//  DASHBOARD — relatorio() resumido
+// ══════════════════════════════════
+//  DASHBOARD
+// ══════════════════════════════════
 
 function renderDash() {
   const total    = funcionarios.length;
@@ -285,10 +342,11 @@ function renderDash() {
   `).join('');
 }
 
+// ══════════════════════════════════
+//  PRESENÇAS — via API REST com JWT
+// ══════════════════════════════════
 
-//  PRESENÇAS — registrarPresenca() / listarPresencas()
-
-function registrarPresenca() {
+async function registrarPresenca() {
   const id     = parseInt(document.getElementById('pres-id').value);
   const estado = document.getElementById('pres-estado').value;
   const f      = funcionarios.find(x => x.id === id);
@@ -298,17 +356,34 @@ function registrarPresenca() {
     return;
   }
 
-  presencas.push({
-    idFuncionario:    f.id,
-    nomeFuncionario:  f.nome,
-    estado
-  });
+  try {
+    const response = await fetch(`${API}/presencas`, {
+      method: 'POST',
+      headers: headers(),
+      body: JSON.stringify({
+        idFuncionario:   f.id,
+        nomeFuncionario: f.nome,
+        estado
+      })
+    });
 
-  save();
-  document.getElementById('pres-id').value = '';
-  renderPresencas();
-  renderDash();
-  toast('Presença registada: ' + f.nome + ' — ' + estado);
+    if (handleUnauthorized(response)) return;
+
+    if (!response.ok) {
+      const erro = await response.text();
+      toast(erro, 'danger');
+      return;
+    }
+
+    toast('Presença registada: ' + f.nome + ' — ' + estado);
+    document.getElementById('pres-id').value = '';
+    await carregarPresencas();
+    renderPresencas();
+    renderDash();
+
+  } catch (e) {
+    toast('Erro ao conectar à API.', 'danger');
+  }
 }
 
 function renderPresencas() {
@@ -329,6 +404,7 @@ function renderPresencas() {
         <div class="p-info">
           <strong>${p.nomeFuncionario}</strong>
           <span>ID #${p.idFuncionario}</span><br/>
+          <span style="font-size:11px;color:var(--muted)">${p.dataHora ? new Date(p.dataHora).toLocaleString('pt-PT') : ''}</span><br/>
           <span class="badge ${p.estado === 'Presente' ? 'badge-green' : 'badge-red'}" style="margin-top:4px">${p.estado}</span>
         </div>
       </div>
@@ -336,8 +412,9 @@ function renderPresencas() {
   }).join('');
 }
 
-
-//  RELATÓRIO — relatorio()
+// ══════════════════════════════════
+//  RELATÓRIO
+// ══════════════════════════════════
 
 function renderRelatorio() {
   const total    = funcionarios.length;
@@ -345,14 +422,12 @@ function renderRelatorio() {
   const presente = presencas.filter(p => p.estado === 'Presente').length;
   const faltosos = presencas.filter(p => p.estado === 'Faltou').length;
 
-  // Agrupamento por cargo
   const cargos = {};
   funcionarios.forEach(f => { cargos[f.cargo] = (cargos[f.cargo] || 0) + 1; });
   const cargoRows = Object.entries(cargos).map(([c, n]) =>
     `<tr><td>${c}</td><td><span class="badge badge-gold">${n}</span></td></tr>`
   ).join('') || `<tr><td colspan="2" style="color:var(--muted);text-align:center;padding:20px">Sem dados</td></tr>`;
 
-  // Agrupamento por turno
   const turnos = {};
   funcionarios.forEach(f => { turnos[f.turno] = (turnos[f.turno] || 0) + 1; });
   const turnoRows = Object.entries(turnos).map(([t, n]) =>
@@ -363,11 +438,11 @@ function renderRelatorio() {
     <div class="panel">
       <div class="panel-head"><h2>Resumo Geral</h2></div>
       <div style="padding:24px;display:flex;flex-direction:column;gap:16px">
-        ${relItem('Total de Funcionários',  total,                                                      'var(--gold)')}
-        ${relItem('Total Salarial',         Number(salTotal).toLocaleString('pt-AO') + ' Kz',          'var(--warn)')}
-        ${relItem('Presenças Registadas',   presente + faltosos,                                        'var(--text)')}
-        ${relItem('Presentes',              presente,                                                   'var(--success)')}
-        ${relItem('Faltosos',               faltosos,                                                   'var(--danger)')}
+        ${relItem('Total de Funcionários',  total,                                                       'var(--gold)')}
+        ${relItem('Total Salarial',         Number(salTotal).toLocaleString('pt-AO') + ' Kz',           'var(--warn)')}
+        ${relItem('Presenças Registadas',   presente + faltosos,                                         'var(--text)')}
+        ${relItem('Presentes',              presente,                                                    'var(--success)')}
+        ${relItem('Faltosos',               faltosos,                                                    'var(--danger)')}
         ${relItem('Média Salarial',         total ? Math.round(salTotal/total).toLocaleString('pt-AO') + ' Kz' : '0 Kz', 'var(--muted)')}
       </div>
     </div>
@@ -404,18 +479,61 @@ function relItem(label, value, color) {
   `;
 }
 
+// ══════════════════════════════════
+//  EXPORTAR PDF
+// ══════════════════════════════════
+
+async function exportarPDF() {
+  try {
+    toast('A gerar PDF...', 'gold');
+    const response = await fetch(`${API}/relatorio/pdf`, {
+      headers: headers()
+    });
+
+    if (handleUnauthorized(response)) return;
+
+    if (!response.ok) {
+      toast('Erro ao gerar PDF.', 'danger');
+      return;
+    }
+
+    const blob = await response.blob();
+    const url  = window.URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'relatorio_hotel.pdf';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast('PDF exportado com sucesso!');
+
+  } catch (e) {
+    toast('Erro ao conectar à API.', 'danger');
+  }
+}
+
+// ══════════════════════════════════
 //  LOGOUT
+// ══════════════════════════════════
 
 function logout() {
+  sessionStorage.clear();
   document.body.style.opacity    = '0';
   document.body.style.transition = 'opacity .3s';
   setTimeout(() => { window.location.href = 'index.html'; }, 300);
 }
 
-
+// ══════════════════════════════════
 //  INIT
+// ══════════════════════════════════
 
-renderDash();
+async function init() {
+  verificarAuth();
+  await carregarFuncionarios();
+  await carregarPresencas();
+  renderDash();
+}
+
+init();
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') closeModal();
